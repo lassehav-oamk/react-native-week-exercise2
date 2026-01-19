@@ -1,11 +1,11 @@
-# React Native Navigation & State Sharing Exercise
+# React Native Navigation & Data Passing Exercise
 
 ## Overview
 
 Build a multi-screen React Native application using React Navigation. The app will start with a login screen, navigate to a welcome screen, and include a shared click counter that can be accessed and modified across multiple screens.
 
 You will practice:
-- Screen navigation with React Navigation
+- Screen navigation with React Navigation (Stack Navigator)
 - Passing data between screens
 - Managing shared state across the application
 - Controlling navigation stack behavior
@@ -56,20 +56,19 @@ project-root/
 - Must accept `{ navigation }` prop
 
 **UI Elements (Required testIDs):**
-- Username TextInput with `testID="text-input"`
+- Username TextInput with `testID="username-input"`
 - Password TextInput with `testID="password-input"` and `secureTextEntry={true}`
 - Login Button with `testID="button"` and `title="Login"`
 
 **Functionality:**
 - When Login button is pressed:
   - Validate both username and password are not empty (trim whitespace)
-  - Store username in AsyncStorage with key `'username'`
-  - Navigate to WelcomeView using `navigation.reset()` to prevent back navigation
-  - Use exact navigation pattern:
+  - Navigate to WelcomeView and pass the username to the next screen
+  - Use `navigation.reset()` to prevent back navigation:
     ```javascript
     navigation.reset({
       index: 0,
-      routes: [{ name: 'WelcomeView' }],
+      routes: [{ name: 'WelcomeView', params: { username: username } }],
     });
     ```
 
@@ -79,15 +78,14 @@ project-root/
 - Must export default a component named `WelcomeView`
 
 **Props:**
-- Must accept `{ navigation }` prop
+- Must accept `{ navigation, route }` prop
 
-**State Management:**
-- Load `username` from AsyncStorage (key: `'username'`)
-- Load `clickCount` from AsyncStorage (key: `'clickCount'`)
-- Initialize clickCount to `0` if not found
+**Data Requirements:**
+- Receive `username` from the previous screen
+- Manage `clickCount` value (initialize to `0`)
 
 **Display Requirements:**
-- Must display text containing: `"Welcome {username}"` where {username} is the stored value
+- Must display text containing: `"Welcome {username}"` where {username} is the received value
 - Must display text containing: `"Click Count: {clickCount}"` where {clickCount} is the current counter value
 
 **Navigation Buttons:**
@@ -101,21 +99,17 @@ project-root/
 - Must export default a component named `ButtonIncrementView`
 
 **Props:**
-- Must accept `{ navigation }` prop
+- Must accept `{ navigation }` prop (and `route` if using params)
 
-**State Management:**
-- Load `clickCount` from AsyncStorage (key: `'clickCount'`)
-- Initialize to `0` if not found
-- On component mount (useEffect), load the current count
+**Data Requirements:**
+- Access the current `clickCount` value
 
 **Display Requirements:**
 - Display the current click count value
 
 **Functionality:**
-- Increment button that:
-  - Increases clickCount by 1
-  - Saves the new value to AsyncStorage (key: `'clickCount'`)
-  - Updates local state to reflect the change
+- Increment button that increases clickCount by 1
+- The updated count must be reflected when returning to WelcomeView
 
 **Navigation:**
 - Must provide a way to navigate back to WelcomeView
@@ -126,21 +120,17 @@ project-root/
 - Must export default a component named `ButtonDecrementView`
 
 **Props:**
-- Must accept `{ navigation }` prop
+- Must accept `{ navigation }` prop (and `route` if using params)
 
-**State Management:**
-- Load `clickCount` from AsyncStorage (key: `'clickCount'`)
-- Initialize to `0` if not found
-- On component mount (useEffect), load the current count
+**Data Requirements:**
+- Access the current `clickCount` value
 
 **Display Requirements:**
 - Display the current click count value
 
 **Functionality:**
-- Decrement button that:
-  - Decreases clickCount by 1
-  - Saves the new value to AsyncStorage (key: `'clickCount'`)
-  - Updates local state to reflect the change
+- Decrement button that decreases clickCount by 1
+- The updated count must be reflected when returning to WelcomeView
 
 **Navigation:**
 - Must provide a way to navigate back to WelcomeView
@@ -151,12 +141,11 @@ project-root/
 - Must export default a component named `SummaryView`
 
 **Props:**
-- Must accept `{ navigation }` prop
+- Must accept `{ navigation }` prop (and `route` if using params)
 
-**State Management:**
-- Load `username` from AsyncStorage (key: `'username'`)
-- Load `clickCount` from AsyncStorage (key: `'clickCount'`)
-- Initialize clickCount to `0` if not found
+**Data Requirements:**
+- Access the `username` value
+- Access the `clickCount` value
 
 **Display Requirements:**
 - Display the username value
@@ -168,23 +157,20 @@ project-root/
 
 ---
 
-## AsyncStorage Key Reference
+## Data Passing Strategy
 
-| Key | Type | Initial Value | Used In |
-|-----|------|---------------|---------|
-| `'username'` | string | (none) | Login (write), WelcomeView (read), SummaryView (read) |
-| `'clickCount'` | string (number) | `'0'` | All counter screens (read/write) |
+You may use **any method** to pass and share data between screens. Some options include:
 
-**Important:** AsyncStorage stores values as strings. When reading `clickCount`, parse it as an integer: `parseInt(storedCount) || 0`
+1. **Navigation params** - Pass data via `navigation.navigate('ScreenName', { data })`
+2. **React Context** - Create a context provider to share state globally
+3. **State management libraries** - Use Redux, Zustand, or similar
+4. **Lifting state up** - Manage state in App.js and pass via screen props
+
+Choose the approach that works best for your implementation. The tests will verify that data is correctly passed and displayed, not the specific mechanism used.
+
+---
 
 ## Implementation Guidelines
-
-### State Management Strategy
-- Use **AsyncStorage** (`@react-native-async-storage/async-storage`) to persist and share data
-- The click counter must be synchronized across all screens through AsyncStorage
-- Load data from AsyncStorage when components mount (using `useEffect`)
-- Save data to AsyncStorage when values change
-- Initialize counter at `0` if no stored value exists
 
 ### Navigation Flow
 ```
@@ -199,10 +185,10 @@ WelcomeView
 
 ### Critical Implementation Notes
 1. **No back navigation from WelcomeView to Login** - Use `navigation.reset()` pattern shown in specifications
-2. **Case-sensitive naming** - Screen names, AsyncStorage keys, and testIDs must match exactly
-3. **AsyncStorage is asynchronous** - Use async/await properly
-4. **Parse stored numbers** - AsyncStorage returns strings, convert to numbers when needed
-5. **Validation** - Check that username and password are not empty before login
+2. **Case-sensitive naming** - Screen names and testIDs must match exactly
+3. **Validation** - Check that username and password are not empty before login
+4. **Counter initialization** - The click counter should start at 0
+5. **Data synchronization** - Counter changes in increment/decrement screens must be reflected in WelcomeView and SummaryView
 
 ---
 
@@ -219,37 +205,31 @@ This exercise will be **automatically tested** in GitHub Classroom. The autotest
 
 ### Login Screen Tests
 - ✓ Login component renders without errors
-- ✓ Username input exists with `testID="text-input"`
+- ✓ Username input exists with `testID="username-input"`
 - ✓ Password input exists with `testID="password-input"` and has secureTextEntry
 - ✓ Login button exists with `testID="button"` and `title="Login"`
-- ✓ Clicking login with valid credentials stores username in AsyncStorage (key: 'username')
-- ✓ Clicking login navigates to WelcomeView using navigation.reset()
+- ✓ Clicking login with valid credentials navigates to WelcomeView
+- ✓ Username is passed to the next screen
+- ✓ Clicking login uses navigation.reset() to prevent back navigation
 - ✓ Empty username or password prevents login
 
 ### WelcomeView Screen Tests
 - ✓ WelcomeView component renders without errors
-- ✓ Displays "Welcome {username}" with username from AsyncStorage
-- ✓ Displays click count from AsyncStorage
+- ✓ Displays "Welcome {username}" with the passed username
+- ✓ Displays click count value
 - ✓ Has navigation buttons to ButtonIncrementView, ButtonDecrementView, and SummaryView
 - ✓ Cannot navigate back to Login screen
 
 ### Counter Functionality Tests
-- ✓ ButtonIncrementView increments counter and saves to AsyncStorage
-- ✓ ButtonDecrementView decrements counter and saves to AsyncStorage
-- ✓ Counter state persists across screen navigation
-- ✓ All screens read the same clickCount value from AsyncStorage
-- ✓ Counter initializes to 0 if no stored value exists
+- ✓ ButtonIncrementView increments counter
+- ✓ ButtonDecrementView decrements counter
+- ✓ Counter state is shared across screens
+- ✓ Counter initializes to 0
 
 ### SummaryView Screen Tests
-- ✓ SummaryView displays username from AsyncStorage
-- ✓ SummaryView displays clickCount from AsyncStorage
+- ✓ SummaryView displays username
+- ✓ SummaryView displays clickCount
 - ✓ SummaryView has no counter modification buttons
-
-### Data Persistence Tests
-- ✓ AsyncStorage key 'username' is used correctly
-- ✓ AsyncStorage key 'clickCount' is used correctly
-- ✓ Counter value persists as a string in AsyncStorage
-- ✓ parseInt is used when reading clickCount from AsyncStorage
 
 ---
 
@@ -263,25 +243,13 @@ This exercise will be **automatically tested** in GitHub Classroom. The autotest
 6. Automated tests will run on push
 
 
-## Common Errors That Will Fail Tests
-
-| Error | Impact | Fix |
-|-------|--------|-----|
-| Wrong screen name (e.g., 'LoginScreen' instead of 'Login') | Navigation tests fail | Use exact names from specifications |
-| Wrong AsyncStorage key (e.g., 'user' instead of 'username') | Data persistence fails | Use exact keys: 'username', 'clickCount' |
-| Missing testID on Login inputs | Login tests fail | Add testID="text-input" and testID="password-input" |
-| Using navigation.navigate() instead of navigation.reset() in Login | Back navigation test fails | Use navigation.reset() pattern from specifications |
-| Storing clickCount as number instead of string | AsyncStorage write fails | Convert to string: `newCount.toString()` |
-| Not parsing clickCount when reading | Counter displays as string | Use `parseInt(storedCount) || 0` |
-| Forgetting useEffect dependencies array | Infinite re-render | Add empty array `[]` to useEffect |
-| Not handling null AsyncStorage values | App crashes | Use `storedValue || defaultValue` pattern |
 
 ---
 
 ## Resources
 
 - [React Navigation Documentation](https://reactnavigation.org/)
-- [AsyncStorage Documentation](https://react-native-async-storage.github.io/async-storage/)
+- [React Navigation - Passing Parameters](https://reactnavigation.org/docs/params/)
 - [React Hooks Documentation](https://react.dev/reference/react)
 - Install dependencies: `npm install` or `yarn install`
 
@@ -295,9 +263,9 @@ Before pushing your code, verify:
 - [ ] App.js sets up NavigationContainer and Stack.Navigator
 - [ ] Login screen has correct testIDs on all inputs and button
 - [ ] navigation.reset() is used (not navigation.navigate()) when logging in
-- [ ] AsyncStorage keys are exactly: 'username' and 'clickCount'
-- [ ] Counter initializes to 0 when no stored value exists
-- [ ] parseInt() is used when reading clickCount from AsyncStorage
+- [ ] Username is passed from Login to WelcomeView
+- [ ] Counter initializes to 0
+- [ ] Counter changes are reflected across all screens
 - [ ] All screens can navigate back to WelcomeView (except Login)
 - [ ] No console errors or warnings when running the app
 - [ ] Tests pass locally before pushing
